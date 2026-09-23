@@ -4,18 +4,25 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| CONFIGURATION
+| FINAL DESTINATION
 |--------------------------------------------------------------------------
 */
 
 $destination = 'https://boostscale.site/';
 
-$allowedParams = [
-    'gad_campaignid',
+
+/*
+|--------------------------------------------------------------------------
+| PARAMETERS TO FORWARD
+|--------------------------------------------------------------------------
+*/
+
+$allowed = [
     'gclid',
     'gbraid',
     'wbraid',
     'gad_source',
+    'gad_campaignid',
     'utm_source',
     'utm_medium',
     'utm_campaign',
@@ -23,28 +30,9 @@ $allowedParams = [
     'utm_content'
 ];
 
-
-/*
-|--------------------------------------------------------------------------
-| SECURITY / CACHE HEADERS
-|--------------------------------------------------------------------------
-*/
-
-header('X-Content-Type-Options: nosniff');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-header('Pragma: no-cache');
-
-
-/*
-|--------------------------------------------------------------------------
-| READ PARAMETERS
-|--------------------------------------------------------------------------
-*/
-
 $params = [];
 
-foreach ($allowedParams as $key) {
+foreach ($allowed as $key) {
 
     if (!isset($_GET[$key])) {
         continue;
@@ -62,85 +50,48 @@ foreach ($allowedParams as $key) {
 
 /*
 |--------------------------------------------------------------------------
-| CHECK REQUIRED PARAMETER
+| ADD PARAMETERS TO FINAL URL
 |--------------------------------------------------------------------------
 */
 
-if (isset($params['gad_campaignid'])) {
+if (!empty($params)) {
 
-    /*
-    |--------------------------------------------------------------------------
-    | BUILD FINAL DESTINATION
-    |--------------------------------------------------------------------------
-    */
-
-    $queryString = http_build_query(
+    $query = http_build_query(
         $params,
         '',
         '&',
         PHP_QUERY_RFC3986
     );
 
-    if ($queryString !== '') {
-
-        $separator = str_contains($destination, '?')
-            ? '&'
-            : '?';
-
-        $destination .= $separator . $queryString;
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | REDIRECT
-    |--------------------------------------------------------------------------
-    */
-
-    header(
-        'Location: ' . $destination,
-        true,
-        302
-    );
-
-    exit;
+    $destination .=
+        (str_contains($destination, '?') ? '&' : '?')
+        . $query;
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| NO gad_campaignid
+| NO CACHE
 |--------------------------------------------------------------------------
-|
-| Render URL directly open hua aur gad_campaignid nahi mila,
-| to simple response show hoga.
-|
 */
 
-http_response_code(200);
+header(
+    'Cache-Control: no-store, no-cache, must-revalidate, max-age=0'
+);
 
-?>
-<!DOCTYPE html>
-<html lang="en">
+header('Pragma: no-cache');
 
-<head>
 
-    <meta charset="UTF-8">
+/*
+|--------------------------------------------------------------------------
+| REDIRECT
+|--------------------------------------------------------------------------
+*/
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+header(
+    'Location: ' . $destination,
+    true,
+    302
+);
 
-    <meta name="robots"
-          content="noindex,nofollow">
-
-    <title>Redirect Service</title>
-
-</head>
-
-<body>
-
-    <p>Request received.</p>
-
-</body>
-
-</html>
+exit;
